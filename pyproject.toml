@@ -1,5 +1,5 @@
 [project]
-name = "auditory_model_tutorial"
+name = "auditory_ml_tutorial"
 version = "0.0.1"
 
 [tool.ruff]
