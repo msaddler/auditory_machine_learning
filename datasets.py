@@ -1,7 +1,11 @@
-import torch
-import numpy as np
+import glob
 import itertools
+
+import numpy as np
 import scipy.signal
+import soundfile as sf
+import soxr
+import torch
 
 import utils
 
@@ -41,16 +45,12 @@ class SyntheticVowels(torch.utils.data.Dataset):
         if dbspl_list is not None:
             self.sample_dbspl = lambda: float(self.rng.choice(dbspl_list))
         else:
-            self.sample_dbspl = lambda: float(
-                self.rng.uniform(dbspl_min, dbspl_max)
-            )
+            self.sample_dbspl = lambda: float(self.rng.uniform(dbspl_min, dbspl_max))
         if f0_list is not None:
             self.sample_f0 = lambda: float(self.rng.choice(f0_list))
         else:
             self.sample_f0 = lambda: float(
-                np.exp(
-                    self.rng.uniform(np.log(f0_min), np.log(f0_max))
-                )
+                np.exp(self.rng.uniform(np.log(f0_min), np.log(f0_max)))
             )
         # Constants to be used for signal generation
         self.STANDARD_VOWEL_FORMANTS = np.array(
@@ -84,8 +84,8 @@ class SyntheticVowels(torch.utils.data.Dataset):
         self.R = np.exp(-np.pi * self.FORMANT_BANDWIDTHS / self.sr)
         rise, fall = np.split(np.hanning(2 * int(self.dur_ramp * self.sr)), 2)
         self.ramp = np.ones_like(self.t)
-        self.ramp[:len(rise)] *= rise
-        self.ramp[-len(fall):] *= fall
+        self.ramp[: len(rise)] *= rise
+        self.ramp[-len(fall) :] *= fall
         b, a = scipy.signal.butter(
             N=8,
             Wn=4000,
@@ -133,3 +133,51 @@ class SyntheticVowels(torch.utils.data.Dataset):
     def __len__(self):
         """ """
         return len(self.grid) if self.eval_mode else self.n_examples
+
+
+class WavFiles(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        sr=20000,
+        filenames="data/*wav",
+        dbspl=60,
+        random_seed=None,
+        preload=True,
+    ):
+        """
+        PyTorch Dataset object for loading wav files.
+        """
+        self.rng = np.random.default_rng(seed=random_seed)
+        self.sr = sr
+        self.filenames = sorted(glob.glob(filenames))
+        self.preload = preload
+        if self.preload:
+            self.signals = []
+            for filename in self.filenames:
+                signal, sr_src = sf.read(filename)
+                self.signals.append(soxr.resample(signal, sr_src, self.sr))
+        if isinstance(dbspl, (tuple, list)):
+            self.sample_dbspl = lambda: float(self.rng.uniform(*dbspl))
+        else:
+            self.sample_dbspl = lambda: dbspl
+
+    def __getitem__(self, idx):
+        """ """
+        filename = self.filenames[idx]
+        if self.preload:
+            signal = self.signals[idx]
+        else:
+            signal, sr_src = sf.read(filename)
+            signal = soxr.resample(signal, sr_src, self.sr)
+        dbspl = self.sample_dbspl()
+        out = {
+            "sr": self.sr,
+            "signal": signal.astype(np.float32),
+            "dbspl": dbspl,
+            "filename": filename,
+        }
+        return out
+
+    def __len__(self):
+        """ """
+        return len(self.filenames)
