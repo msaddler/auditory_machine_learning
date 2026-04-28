@@ -20,11 +20,12 @@ class SyntheticVowels(torch.utils.data.Dataset):
         f0_list=None,
         vowel_list=list(range(10)),
         n_examples=10000,
+        random_seed=None,
     ):
         """
         Simple synthetic vowel generator.
         """
-        self.rng = np.random.default_rng()
+        self.rng = np.random.default_rng(seed=random_seed)
         self.sr = sr
         self.dur = dur
         self.dur_ramp = dur_ramp
@@ -34,8 +35,7 @@ class SyntheticVowels(torch.utils.data.Dataset):
         self.eval_mode = (dbspl_list is not None) and (f0_list is not None)
         if self.eval_mode:
             grid = list(itertools.product(dbspl_list, f0_list, vowel_list))
-            grid = np.array(grid, dtype=float)
-            self.grid = grid
+            self.grid = np.array(grid, float)
         # Sampling functions for non-evaluation mode
         self.sample_vowel = lambda: int(self.rng.choice(vowel_list))
         if dbspl_list is not None:
@@ -87,7 +87,10 @@ class SyntheticVowels(torch.utils.data.Dataset):
         self.ramp[:len(rise)] *= rise
         self.ramp[-len(fall):] *= fall
         b, a = scipy.signal.butter(
-            N=8, Wn=4000, btype="low", fs=self.sr
+            N=8,
+            Wn=4000,
+            btype="low",
+            fs=self.sr,
         )
         self.lowpass_filter = lambda x: scipy.signal.lfilter(b, a, x)
 
@@ -116,13 +119,13 @@ class SyntheticVowels(torch.utils.data.Dataset):
         else:
             dbspl = self.sample_dbspl()
             f0 = self.sample_f0()
-            vowel = self.sample_vowel()
+            vowel = int(self.sample_vowel())
         out = {
             "sr": self.sr,
-            "signal": self.generate_signal(vowel, f0, dbspl),
+            "signal": self.generate_signal(vowel, f0, dbspl).astype(np.float32),
             "dbspl": dbspl,
             "f0": f0,
-            "vowel": int(vowel),
+            "vowel": vowel,
             "vowel_str": self.map_vowel_to_str[vowel],
         }
         return out
