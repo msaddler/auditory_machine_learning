@@ -174,93 +174,6 @@ def format_axes(
     return ax
 
 
-def make_periodogram_plot(x, sr, figsize=None, **kwargs):
-    """
-    Plot power spectrum of input signal(s).
-    """
-    fig, ax = plt.subplots(figsize=figsize)
-    fxx, pxx = periodogram(x, sr=sr)
-    if pxx.ndim == 2:
-        pxx = pxx.T
-    ax.plot(fxx, pxx)
-    kwargs_format_axes = {
-        "str_xlabel": "Frequency (Hz)",
-        "str_ylabel": "Power (dB SPL)",
-        "xscale": "log",
-        "yscale": "linear",
-        "xlimits": [10, sr / 2],
-        "ylimits": [-60, None],
-    }
-    kwargs_format_axes.update(kwargs)
-    ax = format_axes(ax, **kwargs_format_axes)
-    return fig, ax
-
-
-def make_spectrogram_plot(
-    x,
-    sr,
-    nfft=1024,
-    noverlap=None,
-    mode="default",
-    scale="default",
-    vmin=None,
-    vmax=None,
-    cmap="magma",
-    figsize=None,
-    str_title=None,
-    **kwargs,
-):
-    """
-    Plot spectrogram of input signal alongside time-aligned waveform.
-    """
-    fig, ax_arr = plt.subplots(
-        nrows=2,
-        ncols=1,
-        sharex=True,
-        figsize=figsize,
-        gridspec_kw={
-            "hspace": 0,
-            "height_ratios": [1, 5],
-        },
-        layout="constrained",
-    )
-    t = np.arange(0, len(x)) / sr
-    ax_arr[0].plot(t, x, color="k", lw=1)
-    kwargs_format_axes = {
-        "str_title": str_title,
-        "xticks": [],
-        "yticks": [],
-        "ylimits": [
-            np.min(x) - (np.max(x) - np.min(x)) / 5,
-            np.max(x) + (np.max(x) - np.min(x)) / 5,
-        ],
-        "major_tick_params_kwargs_update": {"length": 0},
-    }
-    ax_arr[0] = format_axes(ax_arr[0], **kwargs_format_axes)
-    ax_arr[0].set_ylabel("Signal", rotation=0, ha="right")
-    spectrum, freqs, t, im = ax_arr[1].specgram(
-        x,
-        Fs=sr,
-        NFFT=nfft,
-        mode=mode,
-        noverlap=nfft - 1 if noverlap is None else noverlap,
-        scale=scale,
-        vmin=vmin,
-        vmax=vmax,
-        cmap=cmap,
-    )
-    fig.colorbar(im, label="Intensity (dB)", pad=0.025)
-    kwargs_format_axes = {
-        "str_xlabel": "Time (s)",
-        "str_ylabel": "Frequency (Hz)",
-        "xlimits": [t[0], t[-1]],
-        "ylimits": [freqs[0], freqs[-1]],
-    }
-    kwargs_format_axes.update(kwargs)
-    ax_arr[1] = format_axes(ax_arr[1], **kwargs_format_axes)
-    return fig, ax_arr
-
-
 def plot_nervegram(
     ax,
     nervegram,
@@ -569,24 +482,26 @@ def get_example_audiogram(severity="ref"):
     return audiogram
 
 
-def map_audiogram_to_rate_level_parameters(
+def map_audiogram_to_cochlear_model_parameters(
     freq=None,
     dbhl=None,
     cfs=None,
     healthy_threshold=0.0,
     healthy_dynamic_range=80.0,
+    min_dynamic_range=0.0,
+    min_bw_mult=1.0,
+    max_bw_mult=3.0,
 ):
     """
-    Maps an audiogram (specified by `freq` and `dbhl` to
-    sigmoid rate-level function parameters in the simplest
-    possible way. Elevated hearing thresholds are added to
-    the `healthy_threshold` and subtracted from the
-    `healthy_dynamic_range`. If a list of characteristic
-    frequencies (`cfs`) is provided, this function returns
-    thresholds and dynamic ranges linearly interpolated at
-    those `cfs`. If not, the function returns thresholds
-    and dynamic ranges at the audiogram frequencies.
+    Crudely maps an audiogram (specified by `freq` and `dbhl`) to cochlear model
+    parameters. Elevated hearing thresholds are added to the `healthy_threshold`
+    and subtracted from the `healthy_dynamic_range`. If a list of characteristic
+    frequencies (`cfs`) is provided, this function returns thresholds, dynamic
+    ranges, and bandwidth multiplication factors linearly interpolated at those
+    `cfs`. If not, the function returns thresholds, dynamic ranges, and bandwidth
+    multiplication factors at the audiogram frequencies.
     """
+    freq = np.asarray(freq).reshape([-1])
     dbhl = np.asarray(dbhl).reshape([-1])
     threshold_at_freq = np.clip(
         a=healthy_threshold + dbhl,
@@ -595,11 +510,16 @@ def map_audiogram_to_rate_level_parameters(
     )
     dynamic_range_at_freq = np.clip(
         a=healthy_dynamic_range - dbhl,
-        a_min=0,
+        a_min=min_dynamic_range,
         a_max=healthy_dynamic_range,
     )
+    bw_mult_at_freq = np.interp(
+        x=threshold_at_freq,
+        xp=[healthy_threshold, healthy_threshold + healthy_dynamic_range],
+        fp=[min_bw_mult, max_bw_mult],
+    )
     if cfs is None:
-        return threshold_at_freq, dynamic_range_at_freq
+        return threshold_at_freq, dynamic_range_at_freq, bw_mult_at_freq
     threshold_at_cfs = np.interp(
         x=cfs,
         xp=freq,
@@ -610,4 +530,9 @@ def map_audiogram_to_rate_level_parameters(
         xp=freq,
         fp=dynamic_range_at_freq,
     )
-    return threshold_at_cfs, dynamic_range_at_cfs
+    bw_mult_at_cfs = np.interp(
+        x=threshold_at_cfs,
+        xp=[healthy_threshold, healthy_threshold + healthy_dynamic_range],
+        fp=[min_bw_mult, max_bw_mult],
+    )
+    return threshold_at_cfs, dynamic_range_at_cfs, bw_mult_at_cfs

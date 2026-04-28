@@ -106,7 +106,8 @@ class SyntheticVowels(torch.utils.data.Dataset):
         poles = np.concatenate([poles, np.conj(poles)])
         b, a = scipy.signal.zpk2tf(0, poles, 1)
         x = np.zeros_like(self.t)
-        x[:: int(np.round(self.sr / f0))] = 1
+        period = int(np.round(self.sr / f0))
+        x[np.random.randint(period) :: period] = 1
         x = scipy.signal.lfilter(b, a, x)
         x = self.lowpass_filter(x)
         x = utils.set_dbspl(x * self.ramp, dbspl)

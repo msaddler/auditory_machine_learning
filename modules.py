@@ -112,12 +112,18 @@ class AudiogramMatchedCochlearModel(CochlearModel):
             audiogram = utils.get_example_audiogram(severity=audiogram)
         msg = f"{audiogram=} must be a dict with keys `freq` and `dbhl`"
         assert isinstance(audiogram, dict), msg
-        threshold, dynamic_range = utils.map_audiogram_to_rate_level_parameters(
+        if isinstance(bw_mult, (list, tuple)):
+            min_bw_mult, max_bw_mult = bw_mult
+        else:
+            min_bw_mult = max_bw_mult = bw_mult
+        threshold, dynamic_range, bw_mult = utils.map_audiogram_to_cochlear_model_parameters(
             freq=audiogram["freq"],
             dbhl=audiogram["dbhl"],
             cfs=cfs,
             healthy_threshold=threshold,
             healthy_dynamic_range=dynamic_range,
+            min_bw_mult=min_bw_mult,
+            max_bw_mult=max_bw_mult,
         )
         super().__init__(
             sr_input=sr_input,
