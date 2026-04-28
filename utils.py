@@ -98,69 +98,6 @@ def periodogram(x, sr, db=True, p_ref=20e-6, scaling="spectrum", **kwargs):
     return fxx, pxx
 
 
-def complex_tone(
-    sr=50e3,
-    dur=50e-3,
-    freq=220,
-    phase=0,
-    amplitude=1,
-):
-    """
-    Generate a tone with the specified parameters.
-    """
-    freq = np.asarray(freq).reshape([-1])
-    phase = np.asarray(phase).reshape([-1])
-    amplitude = np.asarray(amplitude).reshape([-1])
-    assert freq.max() < sr / 2
-    assert freq.shape == phase.shape
-    assert freq.shape == amplitude.shape
-    t = np.arange(0, dur, 1 / sr)
-    x = np.zeros_like(t)
-    for f, p, a in zip(freq, phase, amplitude):
-        x += a * np.sin(2 * np.pi * f * t + p)
-    return x
-
-
-def harmonic_complex_tone(
-    sr=50e3,
-    dur=50e-3,
-    f0=220,
-    harmonics=np.arange(1, 11),
-    phase="sine",
-    amplitudes=None,
-):
-    """
-    Generate a harmonic complex tone with the specified parameters.
-    """
-    freq = f0 * np.asarray(harmonics).reshape([-1])
-    if isinstance(phase, str):
-        if phase.lower() == "sine":
-            phase = np.zeros_like(freq)
-        elif phase.lower() == "cosine":
-            phase = (np.pi / 2) * np.ones_like(freq)
-        elif phase.lower() == "rand":
-            phase = 2 * np.pi * np.random.randn(*freq.shape)
-        elif phase.lower() in ["alt", "alternating"]:
-            phase = (np.pi / 2) * np.ones_like(freq)
-            phase[::2] = 0
-        elif phase.lower() in ["sch", "schroeder"]:
-            phase = (np.pi / 2) + (np.pi * np.square(freq) / len(freq))
-        else:
-            raise ValueError(f"unrecognized {phase=}")
-    if amplitudes is None:
-        amplitude = np.ones_like(freq)
-    else:
-        amplitude = np.ones_like(freq) * np.asarray(amplitudes)
-    x = complex_tone(
-        sr=sr,
-        dur=dur,
-        freq=freq,
-        phase=phase,
-        amplitude=amplitude,
-    )
-    return x
-
-
 def format_axes(
     ax,
     str_title=None,
