@@ -27,7 +27,8 @@ class SyntheticVowels(torch.utils.data.Dataset):
         random_seed=None,
     ):
         """
-        Simple synthetic vowel generator.
+        Simple synthetic vowel generator using a source-filter model.
+        Formant frequencies from Kewley-Port & Watson (1994, JASA).
         """
         self.rng = np.random.default_rng(seed=random_seed)
         self.sr = sr
@@ -52,8 +53,20 @@ class SyntheticVowels(torch.utils.data.Dataset):
             self.sample_f0 = lambda: float(
                 np.exp(self.rng.uniform(np.log(f0_min), np.log(f0_max)))
             )
-        # Constants to be used for signal generation
-        self.STANDARD_VOWEL_FORMANTS = np.array(
+        # Constants to be used for stimulus generation
+        self.map_vowel_to_str = {
+            0: "/i/ (heed)",
+            1: "/I/ (hid)",
+            2: "/e/ (hayed)",
+            3: "/eps/ (head)",
+            4: "/ae/ (had)",
+            5: "/a/ (hod)",
+            6: "/^/ (hud)",
+            7: "/o/ (hoed)",
+            8: "/U/ (hood)",
+            9: "/u/ (who'd)",
+        }
+        self.FORMANT_FREQUENCIES = np.array(
             [
                 (325, 2900, 3500),  # 0: /i/
                 (450, 2300, 3000),  # 1: /I/
@@ -68,18 +81,6 @@ class SyntheticVowels(torch.utils.data.Dataset):
             ]
         )
         self.FORMANT_BANDWIDTHS = np.array((70, 90, 170))
-        self.map_vowel_to_str = {
-            0: "/i/ (heed)",
-            1: "/I/ (hid)",
-            2: "/e/ (hayed)",
-            3: "/eps/ (head)",
-            4: "/ae/ (had)",
-            5: "/a/ (hod)",
-            6: "/^/ (hud)",
-            7: "/o/ (hoed)",
-            8: "/U/ (hood)",
-            9: "/u/ (who'd)",
-        }
         self.t = np.arange(0, self.dur, 1 / self.sr)
         self.R = np.exp(-np.pi * self.FORMANT_BANDWIDTHS / self.sr)
         rise, fall = np.split(np.hanning(2 * int(self.dur_ramp * self.sr)), 2)
@@ -97,9 +98,9 @@ class SyntheticVowels(torch.utils.data.Dataset):
     def generate_signal(self, vowel, f0, dbspl):
         """
         Source-filter model: a harmonic glottal pulse
-        train filtered with appropriate formant filter
+        train filtered with appropriate formant filter.
         """
-        F = self.STANDARD_VOWEL_FORMANTS[vowel]
+        F = self.FORMANT_FREQUENCIES[vowel]
         theta = 2 * np.pi * F / self.sr
         poles = self.R * np.exp(1j * theta)
         poles = np.concatenate([poles, np.conj(poles)])

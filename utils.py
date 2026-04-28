@@ -565,7 +565,8 @@ def get_example_audiogram(severity="ref"):
     msg = f"{severity=} must be one of {list(dict_dbhl.keys())}"
     assert severity in dict_dbhl.keys(), msg
     dbhl = dict_dbhl[severity]
-    return np.asarray(freq), np.asarray(dbhl)
+    audiogram = {"freq": np.asarray(freq), "dbhl": np.asarray(dbhl)}
+    return audiogram
 
 
 def map_audiogram_to_rate_level_parameters(

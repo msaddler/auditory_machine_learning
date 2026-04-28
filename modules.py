@@ -85,6 +85,54 @@ class CochlearModel(torch.nn.Module):
         return x
 
 
+class AudiogramMatchedCochlearModel(CochlearModel):
+    def __init__(
+        self,
+        audiogram=None,
+        sr_input=20000,
+        sr_output=10000,
+        fir_dur=0.05,
+        cfs=utils.erbspace(8e1, 8e3, 100),
+        bw_mult=1.0,
+        ihc_lowpass_cutoff=3000,
+        ihc_lowpass_order=7,
+        threshold=0.0,
+        dynamic_range=80.0,
+        dtype=torch.float32,
+    ):
+        """
+        Same as CochlearModel except the threshold and dynamic range parameters
+        are modified in a CF-dependent manner to crudely simulate an audiogram.
+        The audiogram should be specified as a dictionary with keys `freqs` (in
+        Hz) and `dbhl` (in dB).
+        """
+        if audiogram is None:
+            audiogram = utils.get_example_audiogram(severity="ref")
+        if isinstance(audiogram, str):
+            audiogram = utils.get_example_audiogram(severity=audiogram)
+        msg = f"{audiogram=} must be a dict with keys `freq` and `dbhl`"
+        assert isinstance(audiogram, dict), msg
+        threshold, dynamic_range = utils.map_audiogram_to_rate_level_parameters(
+            freq=audiogram["freq"],
+            dbhl=audiogram["dbhl"],
+            cfs=cfs,
+            healthy_threshold=threshold,
+            healthy_dynamic_range=dynamic_range,
+        )
+        super().__init__(
+            sr_input=sr_input,
+            sr_output=sr_output,
+            fir_dur=fir_dur,
+            cfs=cfs,
+            bw_mult=bw_mult,
+            ihc_lowpass_cutoff=ihc_lowpass_cutoff,
+            ihc_lowpass_order=ihc_lowpass_order,
+            threshold=threshold,
+            dynamic_range=dynamic_range,
+            dtype=dtype,
+        )
+
+
 class FIRFilterbank(torch.nn.Module):
     def __init__(self, fir, dtype=torch.float32, **kwargs_conv1d):
         """
@@ -253,7 +301,7 @@ class SigmoidRateLevelFunction(torch.nn.Module):
         """
         input_ndim = x.ndim
         while x.ndim < 3:
-            x = x.unsqueeze(-2)
+            x = x.unsqueeze(0)
         assert x.ndim == 3, "expected input with shape [batch, freq, time]"
         x = 20 * torch.log10(x / 20e-6)
         x = GradientStableSigmoid.apply(
@@ -263,7 +311,7 @@ class SigmoidRateLevelFunction(torch.nn.Module):
         )
         x = self.rate_spont + (self.rate_max - self.rate_spont) * x
         while x.ndim > input_ndim:
-            x = x.squeeze(-2)
+            x = x.squeeze(0)
         return x
 
 
