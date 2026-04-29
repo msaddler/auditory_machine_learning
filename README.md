@@ -41,9 +41,9 @@ auditory_machine_learning
 ## References
 
 The code provided here has been adapted from my own research:
-- Saddler, Dau, & McDermott (2025). [Towards individualized models of hearing-impaired speech perception](https://www.isca-archive.org/clarity_2025/saddler25_clarity.pdf). *Proc. ISCA Clarity*. ${_**[[code for peripheral hearing loss simulation](modules.py)]**}$
-- Saddler & McDermott (2024). [Models optimized for real-world tasks reveal the task-dependent necessity of precise temporal coding in hearing](https://www.nature.com/articles/s41467-024-54700-5). *Nat. Commun.* ${_**[[code for simple auditory nerve model](https://github.com/msaddler/phaselocknet)]**}$
-- Saddler & Francl et al. (2021). [Speech denoising with auditory models](https://doi.org/10.21437/Interspeech.2021-1973). *Proc. Interspeech*. ${_**[[code for optimizing auditory model-based loss functions](https://github.com/msaddler/auditory-model-denoising)]**}$
+- Saddler, Dau, & McDermott (2025). [Towards individualized models of hearing-impaired speech perception](https://www.isca-archive.org/clarity_2025/saddler25_clarity.pdf). *Proc. ISCA Clarity*. <sub>**[[code for peripheral hearing loss simulation](modules.py)]**</sub>
+- Saddler & McDermott (2024). [Models optimized for real-world tasks reveal the task-dependent necessity of precise temporal coding in hearing](https://www.nature.com/articles/s41467-024-54700-5). *Nat. Commun.* <sub>**[[code for simple auditory nerve model](https://github.com/msaddler/phaselocknet)]**</sub>
+- Saddler & Francl et al. (2021). [Speech denoising with auditory models](https://doi.org/10.21437/Interspeech.2021-1973). *Proc. Interspeech*. <sub>**[[code for optimizing auditory model-based loss functions](https://github.com/msaddler/auditory-model-denoising)]**</sub>
 
 
 ## Contact
