@@ -116,7 +116,11 @@ class AudiogramMatchedCochlearModel(CochlearModel):
             min_bw_mult, max_bw_mult = bw_mult
         else:
             min_bw_mult = max_bw_mult = bw_mult
-        threshold, dynamic_range, bw_mult = utils.map_audiogram_to_cochlear_model_parameters(
+        (
+            threshold,
+            dynamic_range,
+            bw_mult,
+        ) = utils.map_audiogram_to_cochlear_model_parameters(
             freq=audiogram["freq"],
             dbhl=audiogram["dbhl"],
             cfs=cfs,

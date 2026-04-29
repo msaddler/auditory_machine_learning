@@ -10,38 +10,97 @@ import torch
 import utils
 
 
+class WavFiles(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        sr=20000,
+        filenames="data/*wav",
+        dbspl=60,
+        preload=True,
+    ):
+        """
+        PyTorch Dataset object for loading wav files.
+        """
+        self.sr = sr
+        self.filenames = sorted(glob.glob(filenames))
+        self.preload = preload
+        if self.preload:
+            self.signals = []
+            for filename in self.filenames:
+                signal, sr_src = sf.read(filename)
+                self.signals.append(soxr.resample(signal, sr_src, self.sr))
+        self.rng = np.random.default_rng()
+        if isinstance(dbspl, (tuple, list)):
+            self.sample_dbspl = lambda: float(self.rng.uniform(*dbspl))
+        else:
+            self.sample_dbspl = lambda: dbspl
+
+    def __getitem__(self, idx):
+        """ """
+        filename = self.filenames[idx]
+        if self.preload:
+            signal = self.signals[idx]
+        else:
+            signal, sr_src = sf.read(filename)
+            signal = soxr.resample(signal, sr_src, self.sr)
+        dbspl = self.sample_dbspl()
+        out = {
+            "sr": self.sr,
+            "signal": signal.astype(np.float32),
+            "dbspl": dbspl,
+            "filename": filename,
+        }
+        return out
+
+    def __len__(self):
+        """ """
+        return len(self.filenames)
+
+
 class SyntheticVowels(torch.utils.data.Dataset):
     def __init__(
         self,
         sr=20000,
         dur=0.250,
         dur_ramp=0.025,
-        dbspl_min=30,
-        dbspl_max=90,
-        dbspl_list=None,
-        f0_min=100,
-        f0_max=400,
-        f0_list=None,
-        vowel_list=list(range(10)),
-        n_examples=10000,
-        random_seed=None,
+        dbspl=60,
+        f0=100,
+        n_examples=None,
     ):
         """
         Simple synthetic vowel generator using a source-filter model.
         Formant frequencies from Kewley-Port & Watson (1994, JASA).
         """
-        self.rng = np.random.default_rng(seed=random_seed)
         self.sr = sr
         self.dur = dur
         self.dur_ramp = dur_ramp
         self.n_examples = n_examples
-        assert set(vowel_list) <= set(range(10)), f"invalid {vowel_list=}"
+        if isinstance(dbspl, tuple):
+            dbspl_min, dbspl_max = dbspl
+            dbspl_list = None
+        elif isinstance(dbspl, list):
+            dbspl_min = dbspl_max = None
+            dbspl_list = dbspl
+        else:
+            dbspl_min = dbspl_max = None
+            dbspl_list = [dbspl]
+        if isinstance(f0, tuple):
+            f0_min, f0_max = f0
+            f0_list = None
+        elif isinstance(f0, list):
+            f0_min = f0_max = None
+            f0_list = f0
+        else:
+            f0_min = f0_max = None
+            f0_list = [f0]
+        vowel_list = list(range(10))
         # Evaluation mode = full grid of dbspl, f0, and vowel values
         self.eval_mode = (dbspl_list is not None) and (f0_list is not None)
         if self.eval_mode:
             grid = list(itertools.product(dbspl_list, f0_list, vowel_list))
             self.grid = np.array(grid, float)
         # Sampling functions for non-evaluation mode
+        self.rng = np.random.default_rng()
         self.sample_vowel = lambda: int(self.rng.choice(vowel_list))
         if dbspl_list is not None:
             self.sample_dbspl = lambda: float(self.rng.choice(dbspl_list))
@@ -127,6 +186,7 @@ class SyntheticVowels(torch.utils.data.Dataset):
             "signal": self.generate_signal(vowel, f0, dbspl).astype(np.float32),
             "dbspl": dbspl,
             "f0": f0,
+            "formants": self.FORMANT_FREQUENCIES[vowel],
             "vowel": vowel,
             "vowel_str": self.map_vowel_to_str[vowel],
         }
@@ -135,51 +195,3 @@ class SyntheticVowels(torch.utils.data.Dataset):
     def __len__(self):
         """ """
         return len(self.grid) if self.eval_mode else self.n_examples
-
-
-class WavFiles(torch.utils.data.Dataset):
-    def __init__(
-        self,
-        sr=20000,
-        filenames="data/*wav",
-        dbspl=60,
-        random_seed=None,
-        preload=True,
-    ):
-        """
-        PyTorch Dataset object for loading wav files.
-        """
-        self.rng = np.random.default_rng(seed=random_seed)
-        self.sr = sr
-        self.filenames = sorted(glob.glob(filenames))
-        self.preload = preload
-        if self.preload:
-            self.signals = []
-            for filename in self.filenames:
-                signal, sr_src = sf.read(filename)
-                self.signals.append(soxr.resample(signal, sr_src, self.sr))
-        if isinstance(dbspl, (tuple, list)):
-            self.sample_dbspl = lambda: float(self.rng.uniform(*dbspl))
-        else:
-            self.sample_dbspl = lambda: dbspl
-
-    def __getitem__(self, idx):
-        """ """
-        filename = self.filenames[idx]
-        if self.preload:
-            signal = self.signals[idx]
-        else:
-            signal, sr_src = sf.read(filename)
-            signal = soxr.resample(signal, sr_src, self.sr)
-        dbspl = self.sample_dbspl()
-        out = {
-            "sr": self.sr,
-            "signal": signal.astype(np.float32),
-            "dbspl": dbspl,
-            "filename": filename,
-        }
-        return out
-
-    def __len__(self):
-        """ """
-        return len(self.filenames)
