@@ -345,83 +345,12 @@ class GradientStableSigmoid(torch.autograd.Function):
         return grad_output * grad, None, None
 
 
-class AudioConv1d(torch.nn.Conv1d):
-    def __init__(
-        self,
-        in_channels=1,
-        out_channels=1,
-        kernel_size=None,
-        sr=None,
-        fir_dur=None,
-        **kwargs,
-    ):
-        """
-        Wrapper around torch.nn.Conv1d to support 1-dimensional
-        audio convolution with a learnable FIR filter kernel.
-        Unlike in standard torch.nn.Conv1d, the kernel is time-
-        reversed and "same" padding is applied to the input.
-
-        Args
-        ----
-        in_channels (int): number of input channels
-        out_channels (int): number of output channels
-        kernel_size (int): length of FIR kernel in taps
-            (specify `kernel_size` OR `sr` and `fir_dur`)
-        sr (int): sampling rate of FIR kernel
-        fir_dur (int): duration of FIR kernel in seconds
-        """
-        msg = f"invalid args: {kernel_size=}, {sr=}, {fir_dur=}"
-        if kernel_size is None:
-            assert (sr is not None) and (fir_dur is not None), msg
-            kernel_size = int(sr * fir_dur)
-        elif (sr is not None) and (fir_dur is not None):
-            assert kernel_size == int(sr * fir_dur), msg
-        super().__init__(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            bias=False,
-            padding="valid",
-            padding_mode="zeros",
-            **kwargs,
-        )
-        self.channelwise = (in_channels == 1) and (out_channels == 1)
-
-    def forward(self, x):
-        """
-        Forward pass applies filter via 1-dimensional convolution
-        with the FIR kernel. Input shape: [batch, channel, time].
-        """
-        y = torch.nn.functional.pad(
-            x,
-            pad=(self.kernel_size[0] - 1, 0),
-            mode="constant",
-            value=0,
-        )
-        if self.channelwise:
-            # Re-shape [batch, channel, time] --> [batch * channel, 1, time]
-            y = y.view(y.shape[0] * y.shape[1], 1, y.shape[2])
-        y = torch.nn.functional.conv1d(
-            input=y,
-            weight=self.weight.flip(-1),
-            bias=self.bias,
-            stride=self.stride,
-            padding=self.padding,
-            dilation=self.dilation,
-            groups=self.groups,
-        )
-        if self.channelwise:
-            # Re-shape [batch * channel, 1, time] --> [batch, channel, time]
-            y = y.view(x.shape[0], x.shape[1], y.shape[2])
-        return y
-
-
 class HalfCosineFilterbank(torch.nn.Module):
     def __init__(
         self,
         sr=20000,
-        cf_low=10e0,
-        cf_high=10e3,
+        cf_low=10,
+        cf_high=10000,
         cf_num=50,
         scale="log",
         include_highpass=False,

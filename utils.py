@@ -34,6 +34,61 @@ def set_dbspl(x, dbspl, mean_subtract=True):
     return rms_out * x / rms(x)
 
 
+def pad_or_trim_to_len(x, n, dim=0, mode="both", kwargs_pad={}):
+    """
+    Pad or trim an array `x` to length `n` along axis `dim`. If the
+    difference between `x.shape[dim]` and `n` is odd, this function
+    will default to adding/removing the extra sample at the end.
+
+    Args
+    ----
+    x (np.ndarray): input array
+    n (int): desired length along the specified axis
+    dim (int): axis along which to pad/trim (default: 0)
+    mode (str): "both", "start", or "end"
+    kwargs_pad (dict): kwargs for np.pad
+
+    Returns
+    -------
+    x_out (np.ndarray): array with size `n` along axis `dim`
+    """
+    assert mode.lower() in ["both", "start", "end"]
+    x = np.asarray(x)
+    n_orig = x.shape[dim]
+    n_diff = abs(n_orig - n)
+    n_before = n_diff // 2
+    n_after = n_diff - n_before
+
+    def get_slice(start, end):
+        slc = [slice(None)] * x.ndim
+        slc[dim] = slice(start, end)
+        return tuple(slc)
+
+    if n_orig > n:
+        if mode.lower() == "end":
+            x_out = x[get_slice(0, n)]
+        elif mode.lower() == "start":
+            x_out = x[get_slice(n_orig - n, n_orig)]
+        else:
+            x_out = x[get_slice(n_before, n_orig - n_after)]
+    elif n_orig < n:
+        if mode.lower() == "end":
+            pad_before, pad_after = 0, n_diff
+        elif mode.lower() == "start":
+            pad_before, pad_after = n_diff, 0
+        else:
+            pad_before, pad_after = n_before, n_after
+        pad_width = [(0, 0)] * x.ndim
+        pad_width[dim] = (pad_before, pad_after)
+        kwargs = {"mode": "constant"}
+        kwargs.update(kwargs_pad)
+        x_out = np.pad(x, pad_width, **kwargs)
+    else:
+        x_out = x
+    assert x_out.shape[dim] == n
+    return x_out
+
+
 def logspace(start, stop, num):
     """
     Create an array of numbers uniformly spaced on a log scale.
