@@ -12,6 +12,8 @@ To illustrate some of these advantages for hearing science applications, the [**
 3. Defining a model-based loss function for hearing aid optimization
 4. Optimizing hearing aid parameters via gradient descent
 
+![Hearing aid optimization for an auditory model-based loss function ](schematic.png)
+
 
 ## Requirements
 
@@ -41,11 +43,15 @@ auditory_machine_learning
 ## Citations
 
 The code provided here has been adapted from my own research:
-- Saddler, Dau, & McDermott (2025). [Towards individualized models of hearing-impaired speech perception](https://www.isca-archive.org/clarity_2025/saddler25_clarity.pdf). *Proc. ISCA Clarity*. <sub>**[[Simple hearing loss simulation code]](modules.py)**</sub>
-- Saddler & McDermott (2024). [Models optimized for real-world tasks reveal the task-dependent necessity of precise temporal coding in hearing](https://www.nature.com/articles/s41467-024-54700-5). *Nat. Commun.* <sub>**[[Simple auditory nerve model code]](https://github.com/msaddler/phaselocknet)**</sub>
-- Saddler & Francl et al. (2021). [Speech denoising with auditory models](https://doi.org/10.21437/Interspeech.2021-1973). *Proc. Interspeech*. <sub>**[[auditory model loss optimization code]](https://github.com/msaddler/auditory-model-denoising)**</sub>
+- Hearing loss simulation [code](modules.py)
+    - <sub><sup>Saddler, Dau, & McDermott (2025). [Towards individualized models of hearing-impaired speech perception](https://www.isca-archive.org/clarity_2025/saddler25_clarity.pdf). *Proc. ISCA Clarity*.</sup></sub>
+- Simple auditory nerve model [code](https://github.com/msaddler/phaselocknet)
+    - <sub><sup>Saddler & McDermott (2024). [Models optimized for real-world tasks reveal the task-dependent necessity of precise temporal coding in hearing](https://www.nature.com/articles/s41467-024-54700-5). *Nat. Commun.*</sup></sub>
+- Auditory model-based loss function optimization [code](https://github.com/msaddler/auditory-model-denoising)
+    - <sub><sup>Saddler & Francl et al. (2021). [Speech denoising with auditory models](https://doi.org/10.21437/Interspeech.2021-1973). *Proc. Interspeech*.</sup></sub>
 
 
 ## Contact
 
 Mark R. Saddler (marksa@dtu.dk)
+
