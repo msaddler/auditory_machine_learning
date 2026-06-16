@@ -28,6 +28,7 @@ The [**DEMO notebook**](DEMO.ipynb) was designed be run in [Google Colab](https:
 auditory_machine_learning
 |__ DEMO.ipynb           <-- Main demo notebook (start here)
 |__ example_datasets.py  <-- PyTorch dataset classes to generate or load sound waveforms
+|__ example_plots.py     <-- Functions to generate visualizations in the demo notebook
 |__ filters.py           <-- Python filter implementations
 |__ modules.py           <-- PyTorch modules for auditory modeling
 |__ utils.py             <-- Helper functions for plotting and audio manipulation
