@@ -5,17 +5,19 @@ import torch
 import utils
 
 
-def visualize_cochlear_model(cochlear_model, example_input):
+def visualize_cochlear_model(cochlear_model, example_input, str_title=None):
     """ """
     waveform = torch.as_tensor(example_input)
     nervegram = cochlear_model(waveform)
     fig, ax_arr = utils.make_nervegram_plot(
-        waveform=waveform.numpy(),
-        nervegram=nervegram.numpy(),
+        waveform=waveform.detach().cpu().numpy(),
+        nervegram=nervegram.detach().cpu().numpy(),
         sr_waveform=cochlear_model.sr_input,
         sr_nervegram=cochlear_model.sr_output,
         cfs=cochlear_model.cfs,
     )
+    if str_title is not None:
+        fig.suptitle(str_title, y=0.95)
     plt.show()
     return fig, ax_arr
 
