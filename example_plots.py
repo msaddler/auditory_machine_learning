@@ -1,3 +1,4 @@
+import IPython.display as ipd
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -167,7 +168,11 @@ def visualize_filterbank(filterbank, str_title=None):
 def visualize_hearing_aid_gain(hearing_aid, str_title=None):
     """"""
     sr = hearing_aid.sr
-    impulse = torch.zeros(int(sr)).to(hearing_aid.gain_db.device)
+    device = None
+    for p in hearing_aid.parameters():
+        device = p.device
+        break
+    impulse = torch.zeros(int(sr)).to(device)
     impulse[0] = 1
     impulse_response = hearing_aid(impulse).detach().cpu().numpy()
 
@@ -183,7 +188,71 @@ def visualize_hearing_aid_gain(hearing_aid, str_title=None):
         str_ylabel="Gain (dB)",
         xscale="log",
         xlimits=[10, sr // 2],
+        ylimits=[-20, None],
     )
     ax.axhline(0, color="k", lw=0.5)
     plt.show()
     return fig, ax
+
+
+def visualize_hearing_aid_output(hearing_aid, example_input):
+    """ """
+    sr = hearing_aid.sr
+    device = None
+    for p in hearing_aid.parameters():
+        device = p.device
+        break
+    x_unprocessed = torch.as_tensor(example_input).to(device)
+    x_processed = hearing_aid(x_unprocessed)
+    x_unprocessed = x_unprocessed.detach().cpu().numpy()
+    x_processed = x_processed.detach().cpu().numpy()
+
+    fig, ax_arr = plt.subplots(nrows=1, ncols=2, figsize=(9, 3))
+    t = np.arange(0, len(x_unprocessed)) / sr
+    ax_arr[0].plot(t, x_unprocessed, color="k", alpha=0.5)
+    ax_arr[0].plot(t, x_processed, color="r", alpha=0.5)
+    ax_arr[0] = utils.format_axes(
+        ax_arr[0],
+        str_xlabel="Time (s)",
+        str_ylabel="Pressure (Pa)",
+        str_title="Time domain",
+    )
+    fxx, pxx = utils.periodogram(x_unprocessed, sr)
+    fyy, pyy = utils.periodogram(x_processed, sr)
+    ax_arr[1].plot(fxx, pxx, color="k", alpha=0.5)
+    ax_arr[1].plot(fyy, pyy, color="r", alpha=0.5)
+    ax_arr[1] = utils.format_axes(
+        ax_arr[1],
+        xscale="log",
+        xlimits=[10, sr / 2],
+        ylimits=[-10, None],
+        str_xlabel="Frequency (Hz)",
+        str_ylabel="Power (dB SPL)",
+        str_title="Frequency domain",
+    )
+    plt.tight_layout()
+    plt.show()
+
+    # Play the unprocessed input, followed by the hearing-aid processed output
+    data = np.concatenate(
+        [
+            x_unprocessed,
+            np.zeros(int(0.25 * sr)),
+            x_processed,
+        ]
+    )
+    print("Unprocessed input followed by processed ouput (no level normalization)")
+    ipd.display(ipd.Audio(rate=sr, data=data))
+
+    # Play the unprocessed and processed audio, normalized to the same level
+    data = np.concatenate(
+        [
+            x_unprocessed / np.abs(x_unprocessed).max(),
+            np.zeros(int(0.25 * sr)),
+            x_processed / np.abs(x_processed).max(),
+        ]
+    )
+    print("Unprocessed input followed by processed ouput (normalized to same level)")
+    ipd.display(ipd.Audio(rate=sr, data=data))
+
+    return fig, ax_arr

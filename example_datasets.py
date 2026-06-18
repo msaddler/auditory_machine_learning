@@ -17,8 +17,8 @@ class SyntheticVowels(torch.utils.data.Dataset):
         dur=0.250,
         dur_ramp=0.025,
         dbspl=60,
-        f0=100,
-        n_examples=None,
+        f0=(100, 400),
+        n_examples=100,
     ):
         """
         Simple synthetic vowel generator using a source-filter model.
