@@ -20,6 +20,7 @@ def visualize_cochlear_model(cochlear_model, example_input, str_title=None):
     )
     if str_title is not None:
         fig.suptitle(str_title, y=0.95)
+    plt.tight_layout()
     plt.show()
     return fig, ax_arr
 
@@ -163,6 +164,7 @@ def visualize_filterbank(filterbank, str_title=None):
         xlimits=[10, sr // 2],
         ylimits=[-40, None],
     )
+    plt.tight_layout()
     plt.show()
     return fig, ax
 
@@ -190,6 +192,7 @@ def visualize_hearing_aid_gain(hearing_aid, str_title=None):
         ylimits=[-20, None],
     )
     ax.axhline(0, color="k", lw=0.5)
+    plt.tight_layout()
     plt.show()
     return fig, ax
 
@@ -252,3 +255,24 @@ def visualize_hearing_aid_output(hearing_aid, example_input):
     ipd.display(ipd.Audio(rate=sr, data=data))
 
     return fig, ax_arr
+
+
+def visualize_hearing_aid_training_curve(progress_log):
+    """ """
+    fig, ax = plt.subplots()
+    ax.plot(
+        range(len(progress_log)),
+        [_["loss"] for _ in progress_log],
+        color="k",
+        marker=".",
+    )
+    utils.format_axes(
+        ax,
+        str_title="Hearing aid training curve",
+        str_xlabel="Gradient descent steps",
+        str_ylabel="Training loss",
+        ylimits=[0, None],
+    )
+    plt.tight_layout()
+    plt.show()
+    return fig, ax

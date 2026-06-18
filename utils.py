@@ -602,7 +602,7 @@ def get_device_from_module(module):
     """
     Returns device that a module has been assigned to.
     """
-    for k, v in module.state_dict.items():
+    for k, v in module.state_dict().items():
         if v.device is not None:
             return v.device
     return None
