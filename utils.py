@@ -596,3 +596,13 @@ def map_audiogram_to_cochlear_model_parameters(
         fp=[min_bw_mult, max_bw_mult],
     )
     return threshold_at_cfs, dynamic_range_at_cfs, bw_mult_at_cfs
+
+
+def get_device_from_module(module):
+    """
+    Returns device that a module has been assigned to.
+    """
+    for k, v in module.state_dict.items():
+        if v.device is not None:
+            return v.device
+    return None

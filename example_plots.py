@@ -8,7 +8,8 @@ import utils
 
 def visualize_cochlear_model(cochlear_model, example_input, str_title=None):
     """ """
-    waveform = torch.as_tensor(example_input)
+    device = utils.get_device_from_module(cochlear_model)
+    waveform = torch.as_tensor(example_input).to(device)
     nervegram = cochlear_model(waveform)
     fig, ax_arr = utils.make_nervegram_plot(
         waveform=waveform.detach().cpu().numpy(),
@@ -145,7 +146,8 @@ def visualize_cochlear_model_stage_outputs(
 def visualize_filterbank(filterbank, str_title=None):
     """"""
     sr = filterbank.sr
-    impulse = torch.zeros(int(sr))
+    device = utils.get_device_from_module(filterbank)
+    impulse = torch.zeros(int(sr)).to(device)
     impulse[0] = 1
     impulse_response = filterbank(impulse).detach().cpu().numpy()
 
@@ -168,10 +170,7 @@ def visualize_filterbank(filterbank, str_title=None):
 def visualize_hearing_aid_gain(hearing_aid, str_title=None):
     """"""
     sr = hearing_aid.sr
-    device = None
-    for p in hearing_aid.parameters():
-        device = p.device
-        break
+    device = utils.get_device_from_module(hearing_aid)
     impulse = torch.zeros(int(sr)).to(device)
     impulse[0] = 1
     impulse_response = hearing_aid(impulse).detach().cpu().numpy()
@@ -198,10 +197,7 @@ def visualize_hearing_aid_gain(hearing_aid, str_title=None):
 def visualize_hearing_aid_output(hearing_aid, example_input):
     """ """
     sr = hearing_aid.sr
-    device = None
-    for p in hearing_aid.parameters():
-        device = p.device
-        break
+    device = utils.get_device_from_module(hearing_aid)
     x_unprocessed = torch.as_tensor(example_input).to(device)
     x_processed = hearing_aid(x_unprocessed)
     x_unprocessed = x_unprocessed.detach().cpu().numpy()
