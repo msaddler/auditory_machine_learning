@@ -169,7 +169,7 @@ def visualize_filterbank(filterbank, str_title=None):
 
 def visualize_hearing_aid_gain(hearing_aid, str_title=None):
     """"""
-    sr = hearing_aid.sr
+    sr = getattr(hearing_aid, "sr", 20000)
     device = utils.get_device_from_module(hearing_aid)
     impulse = torch.zeros(int(sr)).to(device)
     impulse[0] = 1
@@ -196,7 +196,7 @@ def visualize_hearing_aid_gain(hearing_aid, str_title=None):
 
 def visualize_hearing_aid_output(hearing_aid, example_input):
     """ """
-    sr = hearing_aid.sr
+    sr = getattr(hearing_aid, "sr", 20000)
     device = utils.get_device_from_module(hearing_aid)
     x_unprocessed = torch.as_tensor(example_input).to(device)
     x_processed = hearing_aid(x_unprocessed)
