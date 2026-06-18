@@ -139,3 +139,51 @@ def visualize_cochlear_model_stage_outputs(
     plt.tight_layout()
     plt.show()
     return fig, ax_arr
+
+
+def visualize_filterbank(filterbank, str_title=None):
+    """"""
+    sr = filterbank.sr
+    impulse = torch.zeros(int(sr))
+    impulse[0] = 1
+    impulse_response = filterbank(impulse).detach().cpu().numpy()
+
+    fig, ax = plt.subplots()
+    fxx, pxx = utils.periodogram(impulse_response, sr)
+    ax.plot(fxx, pxx.T - pxx.max())
+    ax = utils.format_axes(
+        ax,
+        str_title=str_title,
+        str_xlabel="Frequency (Hz)",
+        str_ylabel="Power (dB)",
+        xscale="log",
+        xlimits=[10, sr // 2],
+        ylimits=[-40, None],
+    )
+    plt.show()
+    return fig, ax
+
+
+def visualize_hearing_aid_gain(hearing_aid, str_title=None):
+    """"""
+    sr = hearing_aid.sr
+    impulse = torch.zeros(int(sr)).to(hearing_aid.gain_db.device)
+    impulse[0] = 1
+    impulse_response = hearing_aid(impulse).detach().cpu().numpy()
+
+    fig, ax = plt.subplots()
+    fxx, pxx = utils.periodogram(impulse_response, sr)
+    _, pxx_ref = utils.periodogram(impulse.detach().cpu().numpy(), sr)
+    gain = pxx - pxx_ref
+    ax.plot(fxx, gain)
+    ax = utils.format_axes(
+        ax,
+        str_title=str_title,
+        str_xlabel="Frequency (Hz)",
+        str_ylabel="Gain (dB)",
+        xscale="log",
+        xlimits=[10, sr // 2],
+    )
+    ax.axhline(0, color="k", lw=0.5)
+    plt.show()
+    return fig, ax

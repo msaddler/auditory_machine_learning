@@ -4,7 +4,7 @@ This tutorial aims to introduce auditory modeling and optimization in [PyTorch](
 
 - **High-performance computing**: computational models can be efficiently run at scale on (multiple) CPUs or GPUs with minimal code modification.
 - **Neural network compatibility**: models can be integrated with artificial neural networks, which are readily implemented in PyTorch.
-- **Automatic differentiation**: machine learning relies heavily on **gradient descent** algorithms, in which model parameters are optimized to minimize a loss function. This requires iteratively adjusting parameters according to the *gradient* of the loss function with respect to said parameters. Machine learning frameworks like PyTorch have [**automatic differentiation**](https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html), meaning they automatically calculate and keep track of these gradients (greatly simplifying the code needed to train a model).
+- **Automatic differentiation**: modern machine learning relies heavily on **gradient descent** algorithms, in which model parameters are optimized to minimize a loss function. This requires iteratively adjusting parameters according to the *gradient* of the loss function with respect to said parameters. Machine learning frameworks like PyTorch have [**automatic differentiation**](https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html), meaning they automatically calculate and keep track of these gradients (greatly simplifying the code needed to train a model).
 
 To illustrate some of these advantages for hearing science applications, the [**DEMO notebook**](DEMO.ipynb) walks through:
 1. A simple, differentiable auditory nerve model implemented in PyTorch

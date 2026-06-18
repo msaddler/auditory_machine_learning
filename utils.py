@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker
 import numpy as np
 import scipy.signal
+import torch
 
 
 def rms(x):
@@ -349,6 +350,10 @@ def make_nervegram_plot(
     Plot simulated auditory nerve representation alongside sound waveform,
     stimulus power spectrum, and time-averaged excitation pattern.
     """
+    if isinstance(waveform, torch.Tensor):
+        waveform = waveform.detach().cpu().numpy()
+    if isinstance(nervegram, torch.Tensor):
+        nervegram = nervegram.detach().cpu().numpy()
     fig, ax_arr = plt.subplots(
         nrows=2,
         ncols=3,
